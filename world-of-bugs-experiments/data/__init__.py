@@ -7,6 +7,4 @@ __author__ = "Benedict Wilkins"
 __email__ = "benrjw@gmail.com"
 __status__ = "Development"
 
-from ._AE import *
-from ._SPR import *
-from .metrics import *
+from ._data import *
