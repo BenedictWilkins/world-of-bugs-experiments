@@ -78,6 +78,8 @@ class WOBDataModule(LightningDataModule):
 
         # resolve files...
         def resolve_files(files): 
+            if files is None:
+                return []
             if isinstance(files, str): # a suitable glob pattern
                 _path = pathlib.Path(self.path, files).resolve()
                 files = list(sorted(glob.glob(str(_path), recursive=True)))

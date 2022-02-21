@@ -10,9 +10,9 @@ lightning:
     _target_: ${..criterion._target_}
     reduction: 'none'
   metrics: 
-    #- _target_: world-of-bugs-experiments.module.ROC                          # ROC curve
-    #- _target_: world-of-bugs-experiments.module.PrecisionRecall              # PR curve
-    - _target_: world-of-bugs-experiments.module.AccuracyPrecisionRecallF1    # flat accuracy, precision, recall for different threshold values
+    - _target_: world-of-bugs-experiments.module.ROC                          # ROC curve
+    - _target_: world-of-bugs-experiments.module.PrecisionRecall              # PR curve
+    #- _target_: world-of-bugs-experiments.module.AccuracyPrecisionRecallF1    # flat accuracy, precision, recall for different threshold values
   optimiser:
     _target_: torch.optim.Adam
     lr: 0.005
@@ -29,15 +29,15 @@ data:
   num_workers: 12
   train_mode: ['state']
   test_mode: ['state', 'info']
-  train_files: "NORMAL-TRAIN-SMALL/.tar.gz"
+  train_files: "NORMAL-TRAIN-SMALL/*-0000.tar.gz"
   validation_files: "NORMAL-TRAIN-SMALL/*-0000.tar.gz"
   test_files: "TEST/ScreenTear/*-0000.tar.gz"
   
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 1
-  max_epochs: 1
-  min_epochs: 1
+  max_epochs: 2
+  min_epochs: 2
   check_val_every_n_epoch: 1
   #profiler: simple
   logger: 

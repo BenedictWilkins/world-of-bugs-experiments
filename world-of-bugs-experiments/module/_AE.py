@@ -31,24 +31,15 @@ class AELightningModule(pl.LightningModule):
     
     def __init__(self, model, criterion, score, optimiser, metrics=[]):
         super().__init__()
-        self._cfg = SimpleNamespace(model_cfg = model, 
-                                    criterion_cfg = criterion, 
-                                    score_cfg = score, 
-                                    metrics_cfg = metrics, 
-                                    optimiser_cfg = optimiser)
         self.model = instantiate(model)
         self.criterion = instantiate(criterion)
         self.score = instantiate(score)
-        #print(metrics)
         self.metrics = [instantiate(m) for m in metrics]
-
-        self.save_hyperparameters()
-
+        self.optimiser =  instantiate(optimiser, self.parameters())
         self.reconstruction_as_image = reconstruction_as_image(self)
-        self._test_data = DefaultDict(list)
 
     def configure_optimizers(self):
-        return instantiate(self._cfg.optimiser_cfg, self.parameters())
+        return self.optimiser
 
     def forward(self, x):
         return self.model(x)
