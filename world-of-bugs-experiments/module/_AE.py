@@ -7,6 +7,7 @@ __author__ = "Benedict Wilkins"
 __email__ = "benrjw@gmail.com"
 __status__ = "Development"
 
+from re import L
 from types import SimpleNamespace
 from typing import DefaultDict
 
@@ -20,6 +21,8 @@ import torchvision
 
 import pytorch_lightning as pl
 from hydra.utils import instantiate
+
+from pprint import pprint
 
 __all__ = ("AE", "AELightningModule")
 
@@ -75,31 +78,23 @@ class AELightningModule(pl.LightningModule):
         return (bug_type, (score, label))
 
     def test_epoch_end(self, outputs):
-        print("TEST")
         scores = DefaultDict(list)
         labels = DefaultDict(list)
         for bug_type, (score, label) in outputs:
-            scores[bug_type].append(label)
+            scores[bug_type].append(score)
             labels[bug_type].append(label)
         scores = {k:torch.cat(v) for k,v in scores.items()}
         labels = {k:torch.cat(v) for k,v in labels.items()}
+
         assert set(scores.keys()) == set(labels.keys())
-        for k in scores.keys(): # compute metrics
-            x, y = scores[k], labels[k]
-            assert x.shape == y.shape
-            for metric in self.metrics:
-                metric(scores, labels)
+        for metric in self.metrics:# for each score compute the metric
+            for k in scores.keys(): 
+                x, y = scores[k], labels[k]
+                assert x.shape == y.shape
+                metric(self.logger.experiment, x, y, title = f"{k} {metric.abreviation}")
+                
 
-
-
-
-
-
-
-        
-
-
-
+            
 
 def reconstruction_as_image(model): # ensures that a reconstruction is done properly when testing purposes
     if "logit" in str(model.criterion).lower():

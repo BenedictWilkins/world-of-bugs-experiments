@@ -18,15 +18,15 @@ setup(name='wob-experiments',
       packages=find_packages(),
       install_requires=[
                         'tml @ git+ssh://git@github.com/BenedictWilkins/pytorch-module-lib.git'
-                        'gym @ git+shh://git@github.com:BenedictWilkins/gymu.git',
+                        'gymu @ git+shh://git@github.com:BenedictWilkins/gymu.git',
                         'numpy', 
-                        'gym', 
                         'torch', 
                         'torchvision', 
                         'webdataset', 
                         'pytorch-lightning',
                         'kaggle',
                         'hydra'
+                        'scikit-learn'
                         ],
       zip_safe=False)
 
