@@ -1,11 +1,17 @@
 lightning:
   _target_: world-of-bugs-experiments.module.AELightningModule
+
   model: 
     _target_: world-of-bugs-experiments.module.AE
     input_shape: [3,84,84]
     latent_shape: [512]
+    output_layer: 
+      _target_: tml.conv.ResBlock2D
+      _args_ : [3,3]
   criterion: 
     _target_: world-of-bugs-experiments.module.SSIM #torch.nn.MSELoss
+    window_size : 11
+
   score:  # anomaly score
     _target_: ${..criterion._target_}
     reduction: 'none'

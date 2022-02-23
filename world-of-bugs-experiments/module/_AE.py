@@ -106,6 +106,7 @@ class Sequential(nn.Sequential):
         self.output_shape = as_shape(output_shape)
         super().__init__(*layers)       
 
+
 class AE(nn.Module):
     
     def __init__(self, input_shape, latent_shape=1024, channels=16, dropout=0.5, output_layer=None):
@@ -116,7 +117,7 @@ class AE(nn.Module):
         self.output_shape = self.input_shape
         self.channels = channels
         self.dropout = dropout
-        self.output_layer = instantiate(output_layer) if output_layer is not None else nn.Identity()
+        self.output_layer = output_layer if output_layer is not None else nn.Identity()
         self.encoder = self._get_encoder(channels)
         self.decoder = self._get_decoder(channels)
         
