@@ -32,7 +32,7 @@ def main(cfg) -> None:
     trainer = instantiate(cfg.trainer)
    
     trainer.fit(model, datamodule=datamodule)
-    #trainer.test(model, datamodule=datamodule)
+    trainer.test(model, datamodule=datamodule)
 
     wandb.finish() # prevents hanging at the end...?
 

@@ -3,6 +3,7 @@
 # =====================
 # Use the Deep Learning Base AMI (ubuntu)
 # g3.4xlarge
+# dont forget to add storage! (atleast 100gb, 200gb to be safe)
 # =====================
 
 DIRECTORY="/home/ubuntu/.aws"

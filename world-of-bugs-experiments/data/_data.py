@@ -80,11 +80,11 @@ class WOBDataModule(LightningDataModule):
                 print("Done.")
         # resolve files...
         def resolve_files(files, label=""): 
-            if files is None:
-                files = []
             if isinstance(files, str): # a suitable glob pattern
                 _path = pathlib.Path(self.path, files).resolve()
                 files = list(sorted(glob.glob(str(_path), recursive=True)))
+            elif files is None:
+                files = []
             else:
                 raise TypeError("Invalid files specified: {files}, please provide a valid glob pattern.")
             print(f"Found {len(files)} {label} files.")
