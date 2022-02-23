@@ -17,16 +17,18 @@ setup(name='wob-experiments',
       author_email='benrjw@gmail.com',
       packages=find_packages(),
       install_requires=[
-                        'tml @ git+ssh://git@github.com/BenedictWilkins/pytorch-module-lib.git'
-                        'gymu @ git+shh://git@github.com:BenedictWilkins/gymu.git',
+                        'tml @ git+ssh://git@github.com/BenedictWilkins/pytorch-module-lib.git',
+                        'gymu @ git+ssh://git@github.com/BenedictWilkins/gymu.git',
                         'numpy', 
                         'torch', 
+                        'wandb',
                         'torchvision', 
                         'webdataset', 
                         'pytorch-lightning',
                         'kaggle',
-                        'hydra'
-                        'scikit-learn'
+                        'hydra-core',
+                        'scikit-learn',
+                        'matplotlib',
                         ],
       zip_safe=False)
 
