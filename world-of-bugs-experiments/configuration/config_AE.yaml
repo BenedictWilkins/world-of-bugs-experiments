@@ -10,7 +10,6 @@ lightning:
       _args_ : [3,3]
   criterion: 
     _target_: world-of-bugs-experiments.module.SSIM #torch.nn.MSELoss
-    window_size : 11
 
   score:  # anomaly score
     _target_: ${..criterion._target_}
@@ -27,8 +26,8 @@ data:
   _target_: world-of-bugs-experiments.data.WOBDataModule
   path: ${hydra:runtime.cwd}/dataset
   force: false
-  in_memory: True
-  shuffle_buffer_size: 10000
+  in_memory: false
+  shuffle_buffer_size: 20000
   initial_buffer_size: 10000
   prefetch_factor: 16
   batch_size: 256
@@ -44,7 +43,7 @@ trainer:
   gpus: 1
   max_epochs: 12
   min_epochs: 12
-  check_val_every_n_epoch: 2
+  check_val_every_n_epoch: 1
   #profiler: simple
   logger: 
     _target_: pytorch_lightning.loggers.WandbLogger

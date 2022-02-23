@@ -58,6 +58,7 @@ class AELightningModule(pl.LightningModule):
             show_n = 8
             img_reconstruction, img_state = self.reconstruction_as_image(reconstruction[:show_n]), state[:show_n]
             img = torchvision.utils.make_grid([*img_reconstruction, *img_state], nrow=show_n)
+            img = torch.clip(img, 0, 1)
             self.logger.log_image("validation/reconstruction", [img])
 
     def test_step(self, batch, batch_i):
