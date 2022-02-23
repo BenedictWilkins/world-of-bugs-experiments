@@ -29,9 +29,13 @@ def load_model(run, cfg):
 @hydra.main(config_name="config_test.yaml", config_path="./configuration")
 def main(cfg) -> None:
     api = wandb.Api()
+    print(list(api.runs("benedict-wilkins/WOB-Experiments")))
     run = api.run(str(pathlib.PurePath(cfg.wandb.project, cfg.wandb.run)))
     run.config['wandb'] = {**cfg.wandb}
     cfg = omegaconf.OmegaConf.create(run.config)
+    cfg.data.train_files = "NORMAL-TRAIN/*/---.tar"
+    cfg.data.validation_files = "NORMAL-TRAIN-SMALL/*/----.tar"
+    cfg.data.test_files = "TEST/*/*/*.tar"
 
     model = load_model(run, omegaconf.OmegaConf.create(run.config))
     

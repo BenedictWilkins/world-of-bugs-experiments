@@ -118,7 +118,7 @@ class WOBDataModule(LightningDataModule):
         
     def _initialise_test_dataset(self):
         def url_to_info(x):
-            x['info'] = [*x['info'], np.array([x["__url__"].split("/")[-2]])]
+            x['info'] = [*x['info'], np.array([x["__url__"].split("/")[-3]])]
             return x
         def collate(x):
             state = torch.stack([torch.from_numpy(z.state) for z in x])
