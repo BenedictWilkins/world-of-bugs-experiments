@@ -35,13 +35,16 @@ class LabelThresholdMetric:
         label = label.cpu().numpy() if torch.is_tensor(label) else label
         assert score.shape == label.shape
         results = []
+        labels = []
         for lt in self.label_thresholds:
             _label = (label > lt).astype(np.float32)
+            labels.append(_label)
             results.append(self.forward(score, _label))
         # plot results
         kwargs['title'] = kwargs.get('title', self.name)
         xs, ys = [r['x'] for r in results], [r['y'] for r in results]
         fig = self.plot(xs, ys, self.label_thresholds, **kwargs)
+        fig = self.plot_random_performance(fig, labels)
         fig.canvas.draw() # ensure drawn...
         logger.log({f"{self.name}/{kwargs['title']}" : wandb.Image(fig)})
 
@@ -53,17 +56,28 @@ class LabelThresholdMetric:
         ax.set_title(title, fontdict=font)
         ax.set_xlabel(x_label), ax.set_ylabel(y_label)
         ax.set_xlim(x_lim), ax.set_ylim(y_lim)
+
         for x,y,lt in zip(xs, ys, label_thresholds):
             ax.plot(x, y, alpha=alpha, label=f"τ={lt}")
         if legend:
             ax.legend()
         return fig
 
+    def plot_random_performance(self, fig, labels):
+        raise NotImplementedError()
+
 class ROC(LabelThresholdMetric):
     
     def forward(self, score, label):
         fpr, tpr, thresholds = sklearn.metrics.roc_curve(label, score, drop_intermediate=False) 
         return dict(x=fpr, y=tpr, auc=sklearn.metrics.auc(fpr, tpr))
+
+    def random_performance(self, label):
+        return [[0,1],[0,1]]
+
+    def plot_random_performance(self, fig, _):
+        fig.axes[0].plot(*self.random_performance(None), linestyle="--", color='black')
+        return fig
 
     @property
     def name(self):
@@ -77,7 +91,18 @@ class PrecisionRecall(LabelThresholdMetric):
 
     def forward(self, score, label):
         p, r, thresholds = sklearn.metrics.precision_recall_curve(label, score) 
+       
         return dict(y=p, x=r, auc=sklearn.metrics.auc(r, p))
+
+    def random_performance(self, label):
+        label_ratio =  label.sum() / len(label)
+        return [[0, 1],[label_ratio, label_ratio]]
+
+    def plot_random_performance(self, fig, labels):
+        random_performance = list(sorted([self.random_performance(label) for label in labels], key=lambda x: x[1][0]))
+        fig.axes[0].plot(*random_performance[0], linestyle="--", color='black')
+        fig.axes[0].plot(*random_performance[-1], linestyle="--", color='black')
+        return fig
 
     @property
     def name(self):

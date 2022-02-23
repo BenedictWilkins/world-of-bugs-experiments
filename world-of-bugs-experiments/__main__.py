@@ -38,3 +38,22 @@ def main(cfg) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+
+"""
+
+TODO
+
+1. Run experiments on AWS
+4. Update paper conclusions and TODOs get final version !!
+2. Install unity 
+3. new WOB build
+4. generate dataset
+5. update documentation for WOB in code and on github.
+6. update kaggle dataset on github
+
+WHEN PAPER IS DONE!! put on archive and update all referenes to it.
+SUBMIT TO COG 2022 ON OR BEFORE FRIDAY!!
+
+"""

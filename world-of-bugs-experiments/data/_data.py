@@ -25,12 +25,13 @@ import gymu
 
 __all__ = ("WOBDataModule",)
 
-WORLD_OF_BUGS_DATASET_KAGGLE = "benedictwilkinsai/world-of-bugs"
+WORLD_OF_BUGS_DATASET_KAGGLE = ["benedictwilkinsai/world-of-bugs-normal", "benedictwilkinsai/world-of-bugs-test"]
+WORLD_OF_BUGS_DATASET_PATH = "benedictwilkinsai/world-of-bugs/dry"
 
 DATASET_VERSION = -1 # TODO include this! always use latest version...
-TRAINING_SET = "NORMAL-TRAIN/*.tar.gz"
-VALIDATION_SET = "NORMAL-TRAIN-SMALL/*-0000.tar.gz"
-TEST_SET = "TEST/**/*.tar.gz"
+TRAINING_SET = "NORMAL-TRAIN/*/*.tar"
+VALIDATION_SET = "NORMAL-TRAIN-SMALL/*/*-0000.tar"
+TEST_SET = "TEST/**/*.tar"
 
 class WOBDataModule(LightningDataModule):
 
@@ -52,7 +53,7 @@ class WOBDataModule(LightningDataModule):
                     test_files = TEST_SET,
                     ):
         super().__init__()
-        self.path = pathlib.Path(pathlib.Path(path).resolve(), WORLD_OF_BUGS_DATASET_KAGGLE)
+        self.path = pathlib.Path(pathlib.Path(path).resolve(), WORLD_OF_BUGS_DATASET_PATH)
         self.force = force
         self.batch_size = batch_size
         self.in_memory = in_memory
@@ -74,22 +75,24 @@ class WOBDataModule(LightningDataModule):
             self.path.mkdir(parents=True, exist_ok=True)
             api = KaggleApi()
             api.authenticate() # requires ~/.kaggle/kaggle.json file
-            api.dataset_download_files(WORLD_OF_BUGS_DATASET_KAGGLE, quiet=False, unzip=True, force=self.force, path=str(self.path))
-
+            for url in WORLD_OF_BUGS_DATASET_KAGGLE:
+                api.dataset_download_files(url, quiet=False, unzip=True, force=self.force, path=str(self.path))
+                print("Done.")
         # resolve files...
-        def resolve_files(files): 
+        def resolve_files(files, label=""): 
             if files is None:
-                return []
+                files = []
             if isinstance(files, str): # a suitable glob pattern
                 _path = pathlib.Path(self.path, files).resolve()
                 files = list(sorted(glob.glob(str(_path), recursive=True)))
             else:
                 raise TypeError("Invalid files specified: {files}, please provide a valid glob pattern.")
+            print(f"Found {len(files)} {label} files.")
             return files
         
-        self.train_files = resolve_files(self.train_files)
-        self.validation_files = resolve_files(self.validation_files)
-        self.test_files = resolve_files(self.test_files)
+        self.train_files = resolve_files(self.train_files, 'training')
+        self.validation_files = resolve_files(self.validation_files, 'validation')
+        self.test_files = resolve_files(self.test_files, 'test')
 
         self.train_dataset = self._intialise_train_dataset()
         self.validation_dataset = self._initialise_validation_dataset()
@@ -137,8 +140,8 @@ class WOBDataModule(LightningDataModule):
         else:
             return DataLoader(self.train_dataset, shuffle=False, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, persistent_workers=True, pin_memory=True)
 
-    #def val_dataloader(self):
-    #    return DataLoader(self.validation_dataset, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor)
+    def val_dataloader(self):
+        return DataLoader(self.validation_dataset, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor)
@@ -147,12 +150,7 @@ if __name__ == "__main__":
     from pprint import pprint
     dm = WOBDataModule(path="./dataset", force=False, batch_size=2, num_workers=2, test_mode=['state', 'info'])
     dm.prepare_data()
-    loader = dm.test_dataloader()
 
-    for s, _, _, i in loader:
-        print(i)
-
-        break
 
 
 

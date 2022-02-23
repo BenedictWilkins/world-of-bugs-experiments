@@ -10,6 +10,7 @@ __status__ = "Development"
 from re import L
 from types import SimpleNamespace
 from typing import DefaultDict
+from black import out
 
 import torch
 import torch.nn as nn
@@ -108,7 +109,7 @@ class Sequential(nn.Sequential):
 
 class AE(nn.Module):
     
-    def __init__(self, input_shape, latent_shape=1024, channels=16, dropout=0.5):
+    def __init__(self, input_shape, latent_shape=1024, channels=16, dropout=0.5, output_layer=None):
         super().__init__()
         assert input_shape == (3,84,84)
         self.input_shape = as_shape(input_shape)
@@ -116,6 +117,7 @@ class AE(nn.Module):
         self.output_shape = self.input_shape
         self.channels = channels
         self.dropout = dropout
+        self.output_layer = instantiate(output_layer) if output_layer is not None else nn.Identity()
         self.encoder = self._get_encoder(channels)
         self.decoder = self._get_decoder(channels)
         
@@ -159,6 +161,7 @@ class AE(nn.Module):
             nn.ConvTranspose2d(2*channels, 2*channels, (3,3), 1), nn.LeakyReLU(),
             nn.ConvTranspose2d(2*channels, channels, (3,3), 1), nn.LeakyReLU(),
             ResBlock2D(channels, channels), nn.LeakyReLU(),
-            nn.ConvTranspose2d(channels, self.input_shape[0], (6,6), 2)
+            nn.ConvTranspose2d(channels, self.input_shape[0], (6,6), 2),
+            self.output_layer,
         ]
         return Sequential(self.latent_shape, self.input_shape, layers) 

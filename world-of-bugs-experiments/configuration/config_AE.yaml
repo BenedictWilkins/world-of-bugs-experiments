@@ -5,7 +5,7 @@ lightning:
     input_shape: [3,84,84]
     latent_shape: [512]
   criterion: 
-    _target_: torch.nn.MSELoss
+    _target_: world-of-bugs-experiments.module.SSIM #torch.nn.MSELoss
   score:  # anomaly score
     _target_: ${..criterion._target_}
     reduction: 'none'
@@ -15,7 +15,7 @@ lightning:
     #- _target_: world-of-bugs-experiments.module.AccuracyPrecisionRecallF1    # flat accuracy, precision, recall for different threshold values
   optimiser:
     _target_: torch.optim.Adam
-    lr: 0.005
+    lr: 0.0005
 
 data:
   _target_: world-of-bugs-experiments.data.WOBDataModule
@@ -29,15 +29,15 @@ data:
   num_workers: 12
   train_mode: ['state']
   test_mode: ['state', 'info']
-  train_files: "NORMAL-TRAIN-SMALL/*-0000.tar.gz"
-  validation_files: "NORMAL-TRAIN-SMALL/*-0000.tar.gz"
-  test_files: "TEST/ScreenTear/*-0000.tar.gz"
+  train_files: "NORMAL-TRAIN-SMALL/*/*.tar"
+  validation_files: "NORMAL-TRAIN-SMALL/*/*-0000.tar"
+  test_files: "TEST/*/*-0000/*.tar"
   
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 1
-  max_epochs: 2
-  min_epochs: 2
+  max_epochs: 12
+  min_epochs: 12
   check_val_every_n_epoch: 1
   #profiler: simple
   logger: 

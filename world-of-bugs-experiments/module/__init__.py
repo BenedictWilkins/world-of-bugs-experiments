@@ -10,3 +10,4 @@ __status__ = "Development"
 from ._AE import *
 from ._SPR import *
 from .metrics import *
+from .SSIM import *
