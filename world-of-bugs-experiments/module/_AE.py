@@ -25,7 +25,7 @@ from hydra.utils import instantiate
 
 from pprint import pprint
 
-__all__ = ("AE", "AELightningModule")
+__all__ = ("AE", "AEAlex", "AEConv", "AEGDN", "AELightningModule")
 
 
 class AELightningModule(pl.LightningModule):
@@ -110,7 +110,7 @@ class Sequential(nn.Sequential):
 
 class AE(nn.Module): # Legacy...
     
-    def __init__(self, input_shape, latent_shape=1024, channels=16, dropout=0.5, output_layer=None):
+    def __init__(self, input_shape=(3,84,84), latent_shape=1024, channels=16, dropout=0.5, output_layer=None):
         super().__init__()
         assert input_shape == (3,84,84)
         self.input_shape = as_shape(input_shape)
