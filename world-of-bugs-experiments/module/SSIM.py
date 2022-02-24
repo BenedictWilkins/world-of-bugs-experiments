@@ -25,7 +25,7 @@ def _fspecial_gauss_1d(size, sigma):
     return g.unsqueeze(0).unsqueeze(0)
 
 
-def gaussian_filter(input, win):
+def gaussian_filter(input, window):
     r""" Blur input with 1-D kernel
     Args:
         input (torch.Tensor): a batch of tensors to be blurred
@@ -34,7 +34,7 @@ def gaussian_filter(input, win):
     Returns:
         torch.Tensor: blurred tensors
     """
-    assert all([ws == 1 for ws in win.shape[1:-1]]), win.shape
+    assert all([ws == 1 for ws in window.shape[1:-1]]), window.shape
     if len(input.shape) == 4:
         conv = F.conv2d
     elif len(input.shape) == 5:
@@ -45,24 +45,24 @@ def gaussian_filter(input, win):
     C = input.shape[1]
     out = input
     for i, s in enumerate(input.shape[2:]):
-        if s >= win.shape[-1]:
-            out = conv(out, weight=win.transpose(2 + i, -1), stride=1, padding=0, groups=C)
+        if s >= window.shape[-1]:
+            out = conv(out, weight=window.transpose(2 + i, -1), stride=1, padding=0, groups=C)
         else:
             warnings.warn(
-                f"Skipping Gaussian Smoothing at dimension 2+{i} for input: {input.shape} and win size: {win.shape[-1]}"
+                f"Skipping Gaussian Smoothing at dimension 2+{i} for input: {input.shape} and window size: {window.shape[-1]}"
             )
 
     return out
 
 
-def _ssim(X, Y, data_range, win, size_average=True, K=(0.01, 0.03)):
+def _ssim(X, Y, data_range, window, size_average=True, K=(0.01, 0.03)):
 
     r""" Calculate ssim index for X and Y
 
     Args:
         X (torch.Tensor): images
         Y (torch.Tensor): images
-        win (torch.Tensor): 1-D gauss kernel
+        window (torch.Tensor): 1-D gauss kernel
         data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
         size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
 
@@ -76,18 +76,18 @@ def _ssim(X, Y, data_range, win, size_average=True, K=(0.01, 0.03)):
     C1 = (K1 * data_range) ** 2
     C2 = (K2 * data_range) ** 2
 
-    win = win.to(X.device, dtype=X.dtype)
+    window = window.to(X.device, dtype=X.dtype)
 
-    mu1 = gaussian_filter(X, win)
-    mu2 = gaussian_filter(Y, win)
+    mu1 = gaussian_filter(X, window)
+    mu2 = gaussian_filter(Y, window)
 
     mu1_sq = mu1.pow(2)
     mu2_sq = mu2.pow(2)
     mu1_mu2 = mu1 * mu2
 
-    sigma1_sq = compensation * (gaussian_filter(X * X, win) - mu1_sq)
-    sigma2_sq = compensation * (gaussian_filter(Y * Y, win) - mu2_sq)
-    sigma12 = compensation * (gaussian_filter(X * Y, win) - mu1_mu2)
+    sigma1_sq = compensation * (gaussian_filter(X * X, window) - mu1_sq)
+    sigma2_sq = compensation * (gaussian_filter(Y * Y, window) - mu2_sq)
+    sigma12 = compensation * (gaussian_filter(X * Y, window) - mu1_mu2)
 
     cs_map = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)  # set alpha=beta=gamma=1
     ssim_map = ((2 * mu1_mu2 + C1) / (mu1_sq + mu2_sq + C1)) * cs_map
@@ -102,9 +102,9 @@ def ssim(
     Y,
     data_range=255,
     size_average=True,
-    win_size=11,
-    win_sigma=1.5,
-    win=None,
+    window_size=11,
+    window_sigma=1.5,
+    window=None,
     K=(0.01, 0.03),
     nonnegative_ssim=False,
 ):
@@ -114,9 +114,9 @@ def ssim(
         Y (torch.Tensor): a batch of images, (N,C,H,W)
         data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
         size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-        win_size: (int, optional): the size of gauss kernel
-        win_sigma: (float, optional): sigma of normal distribution
-        win (torch.Tensor, optional): 1-D gauss kernel. if None, a new kernel will be created according to win_size and win_sigma
+        window_size: (int, optional): the size of gauss kernel
+        window_sigma: (float, optional): sigma of normal distribution
+        window (torch.Tensor, optional): 1-D gauss kernel. if None, a new kernel will be created according to window_size and window_sigma
         K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a negative or NaN results.
         nonnegative_ssim (bool, optional): force the ssim response to be nonnegative with relu
 
@@ -136,17 +136,17 @@ def ssim(
     if not X.type() == Y.type():
         raise ValueError("Input images should have the same dtype.")
 
-    if win is not None:  # set win_size
-        win_size = win.shape[-1]
+    if window is not None:  # set window_size
+        window_size = window.shape[-1]
 
-    if not (win_size % 2 == 1):
+    if not (window_size % 2 == 1):
         raise ValueError("Window size should be odd.")
 
-    if win is None:
-        win = _fspecial_gauss_1d(win_size, win_sigma)
-        win = win.repeat([X.shape[1]] + [1] * (len(X.shape) - 1))
+    if window is None:
+        window = _fspecial_gauss_1d(window_size, window_sigma)
+        window = window.repeat([X.shape[1]] + [1] * (len(X.shape) - 1))
 
-    ssim_per_channel, cs = _ssim(X, Y, data_range=data_range, win=win, size_average=False, K=K)
+    ssim_per_channel, cs = _ssim(X, Y, data_range=data_range, window=window, size_average=False, K=K)
     if nonnegative_ssim:
         ssim_per_channel = torch.relu(ssim_per_channel)
 
@@ -157,7 +157,7 @@ def ssim(
 
 
 def ms_ssim(
-    X, Y, data_range=255, size_average=True, win_size=11, win_sigma=1.5, win=None, weights=None, K=(0.01, 0.03)
+    X, Y, data_range=255, size_average=True, window_size=11, window_sigma=1.5, window=None, weights=None, K=(0.01, 0.03)
 ):
 
     r""" interface of ms-ssim
@@ -166,9 +166,9 @@ def ms_ssim(
         Y (torch.Tensor): a batch of images, (N,C,[T,]H,W)
         data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
         size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-        win_size: (int, optional): the size of gauss kernel
-        win_sigma: (float, optional): sigma of normal distribution
-        win (torch.Tensor, optional): 1-D gauss kernel. if None, a new kernel will be created according to win_size and win_sigma
+        window_size: (int, optional): the size of gauss kernel
+        window_sigma: (float, optional): sigma of normal distribution
+        window (torch.Tensor, optional): 1-D gauss kernel. if None, a new kernel will be created according to window_size and window_sigma
         weights (list, optional): weights for different levels
         K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a negative or NaN results.
     Returns:
@@ -191,29 +191,29 @@ def ms_ssim(
     else:
         raise ValueError(f"Input images should be 4-d or 5-d tensors, but got {X.shape}")
 
-    if win is not None:  # set win_size
-        win_size = win.shape[-1]
+    if window is not None:  # set window_size
+        window_size = window.shape[-1]
 
-    if not (win_size % 2 == 1):
+    if not (window_size % 2 == 1):
         raise ValueError("Window size should be odd.")
 
     smaller_side = min(X.shape[-2:])
-    assert smaller_side > (win_size - 1) * (
+    assert smaller_side > (window_size - 1) * (
         2 ** 4
-    ), "Image size should be larger than %d due to the 4 downsamplings in ms-ssim" % ((win_size - 1) * (2 ** 4))
+    ), "Image size should be larger than %d due to the 4 downsamplings in ms-ssim" % ((window_size - 1) * (2 ** 4))
 
     if weights is None:
         weights = [0.0448, 0.2856, 0.3001, 0.2363, 0.1333]
     weights = torch.FloatTensor(weights, device=X.device, dtype=X.dtype)
 
-    if win is None:
-        win = _fspecial_gauss_1d(win_size, win_sigma)
-        win = win.repeat([X.shape[1]] + [1] * (len(X.shape) - 1))
+    if window is None:
+        window = _fspecial_gauss_1d(window_size, window_sigma)
+        window = window.repeat([X.shape[1]] + [1] * (len(X.shape) - 1))
 
     levels = weights.shape[0]
     mcs = []
     for i in range(levels):
-        ssim_per_channel, cs = _ssim(X, Y, win=win, data_range=data_range, size_average=False, K=K)
+        ssim_per_channel, cs = _ssim(X, Y, window=window, data_range=data_range, size_average=False, K=K)
 
         if i < levels - 1:
             mcs.append(torch.relu(cs))
@@ -236,8 +236,8 @@ class SSIM(torch.nn.Module):
         self,
         data_range=1.0,
         reduction='mean',
-        win_size=11,
-        win_sigma=1.5,
+        window_size=11,
+        window_sigma=1.5,
         channel=3,
         spatial_dims=2,
         K=(0.01, 0.03),
@@ -247,16 +247,16 @@ class SSIM(torch.nn.Module):
         Args:
             data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
             size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-            win_size: (int, optional): the size of gauss kernel
-            win_sigma: (float, optional): sigma of normal distribution
+            window_size: (int, optional): the size of gauss kernel
+            window_sigma: (float, optional): sigma of normal distribution
             channel (int, optional): input channels (default: 3)
             K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a negative or NaN results.
             nonnegative_ssim (bool, optional): force the ssim response to be nonnegative with relu.
         """
 
         super(SSIM, self).__init__()
-        self.win_size = win_size
-        self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat([channel, 1] + [1] * spatial_dims)
+        self.window_size = window_size
+        self.window = _fspecial_gauss_1d(window_size, window_sigma).repeat([channel, 1] + [1] * spatial_dims)
         self.size_average = reduction == 'mean'
         self.data_range = data_range
         self.K = K
@@ -268,7 +268,7 @@ class SSIM(torch.nn.Module):
             Y,
             data_range=self.data_range,
             size_average=self.size_average,
-            win=self.win,
+            window=self.window,
             K=self.K,
             nonnegative_ssim=self.nonnegative_ssim,
         )
@@ -279,8 +279,8 @@ class MS_SSIM(torch.nn.Module):
         self,
         data_range=1.0,
         reduction='mean',
-        win_size=11,
-        win_sigma=1.5,
+        window_size=11,
+        window_sigma=1.5,
         channel=3,
         spatial_dims=2,
         weights=None,
@@ -290,16 +290,16 @@ class MS_SSIM(torch.nn.Module):
         Args:
             data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
             size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
-            win_size: (int, optional): the size of gauss kernel
-            win_sigma: (float, optional): sigma of normal distribution
+            window_size: (int, optional): the size of gauss kernel
+            window_sigma: (float, optional): sigma of normal distribution
             channel (int, optional): input channels (default: 3)
             weights (list, optional): weights for different levels
             K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a negative or NaN results.
         """
 
         super(MS_SSIM, self).__init__()
-        self.win_size = win_size
-        self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat([channel, 1] + [1] * spatial_dims)
+        self.window_size = window_size
+        self.window = _fspecial_gauss_1d(window_size, window_sigma).repeat([channel, 1] + [1] * spatial_dims)
         self.size_average = reduction == 'mean'
         self.data_range = data_range
         self.weights = weights
@@ -311,7 +311,7 @@ class MS_SSIM(torch.nn.Module):
             Y,
             data_range=self.data_range,
             size_average=self.size_average,
-            win=self.win,
+            window=self.window,
             weights=self.weights,
             K=self.K,
         )
