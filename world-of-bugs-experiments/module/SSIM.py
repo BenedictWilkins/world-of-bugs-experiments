@@ -3,9 +3,10 @@
 import warnings
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
-__all__ = ("SSIM", "MS_SSIM")
+__all__ = ("MSESSIM", "SSIM", "MS_SSIM")
 
 def _fspecial_gauss_1d(size, sigma):
     r"""Create 1-D gauss kernel
@@ -230,7 +231,6 @@ def ms_ssim(
     else:
         return ms_ssim_val.mean(1)
 
-
 class SSIM(torch.nn.Module):
     def __init__(
         self,
@@ -315,3 +315,13 @@ class MS_SSIM(torch.nn.Module):
             weights=self.weights,
             K=self.K,
         )
+
+class MSESSIM(SSIM):
+
+    def __init__(self, *args, beta=0.05, reduction='mean', **kwargs):
+        super().__init__(*args, reduction=reduction, **kwargs)
+        self.MSE_loss = nn.MSELoss(reduction=reduction)
+        self.beta = beta
+
+    def forward(self, x, y):
+        return (1-self.beta) * super().forward(x, y) + (self.beta * self.MSE_loss(x, y))
