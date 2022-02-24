@@ -5,7 +5,7 @@ import warnings
 import torch
 import torch.nn.functional as F
 
-__all__ = ("SSM", "MS_SSIM")
+__all__ = ("SSIM", "MS_SSIM")
 
 def _fspecial_gauss_1d(size, sigma):
     r"""Create 1-D gauss kernel

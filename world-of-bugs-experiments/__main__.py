@@ -17,7 +17,7 @@ from pytorch_lightning import Trainer
 
 
 @hydra.main(config_name="config_AE.yaml", config_path="./configuration")
-def main(cfg) -> None:
+def main(cfg):
 
     
     datamodule = instantiate(cfg.data)
