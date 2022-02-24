@@ -186,28 +186,10 @@ class AEBase(nn.Module):
 
     def _get_decoder(self):
         raise NotImplementedError()
-         
-class AEConv(AEBase):
-    
-    def _get_encoder(self):
-        return nn.Sequential(
-            nn.Conv2d(3,16,kernel_size=5,stride=2), nn.LeakyReLU(),
-            nn.Conv2d(16,32,kernel_size=5,stride=2), nn.LeakyReLU(),
-            nn.Conv2d(32,64,kernel_size=5,stride=2),  nn.LeakyReLU(),
-            nn.Conv2d(64,128,kernel_size=5,stride=1),
-        ) 
-    
-    def _get_decoder(self):
-        return nn.Sequential(
-            nn.ConvTranspose2d(128,64,kernel_size=5,stride=1), nn.LeakyReLU(),
-            nn.ConvTranspose2d(64,32,kernel_size=5,stride=2,output_padding=1),  nn.LeakyReLU(),
-            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2,output_padding=1), nn.LeakyReLU(),
-            nn.ConvTranspose2d(16,3,kernel_size=5,stride=2,output_padding=1),
-        )
-    
+   
 class AEAlex(AEBase):
     
-    def __init__(self, input_shape=(3,84,84), latent_shape=(3*3*128,), dropout=0.5):
+    def __init__(self, input_shape=(3,84,84), latent_shape=(2*2*128,), dropout=0.5):
         self.dropout = dropout
         self.latent_shape = latent_shape
         super().__init__(input_shape=input_shape)
@@ -215,41 +197,74 @@ class AEAlex(AEBase):
         
     def _get_encoder(self):
         return nn.Sequential(
-            nn.Conv2d(3,16,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(3,16,kernel_size=6,stride=1), nn.LeakyReLU(),
             nn.Conv2d(16,32,kernel_size=5,stride=2), nn.LeakyReLU(),
-            nn.Conv2d(32,64,kernel_size=5,stride=2),  nn.LeakyReLU(),
-            nn.Conv2d(64,128,kernel_size=5,stride=1), nn.LeakyReLU(),
-            tml.View(3*3*128, -1),
-            nn.Linear(3*3*128, self.latent_shape[0]), 
+            nn.Conv2d(32,64,kernel_size=6,stride=1),  nn.LeakyReLU(),
+            nn.Conv2d(64,128,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(128,128,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(128,128,kernel_size=5,stride=1),  
+            tml.View(2*2*128, -1),
+            nn.Linear(2*2*128, self.latent_shape[0]), 
             nn.Dropout(self.dropout) if self.dropout > 0 else nn.Identity(),
         )
     
     def _get_decoder(self):
         return nn.Sequential(
-            nn.Linear(self.latent_shape[0], 3*3*128),
-            tml.View(-1, (128,3,3)),
-            nn.ConvTranspose2d(128,64,kernel_size=5,stride=1), nn.LeakyReLU(),
-            nn.ConvTranspose2d(64,32,kernel_size=5,stride=2,output_padding=1),  nn.LeakyReLU(),
-            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2,output_padding=1), nn.LeakyReLU(),
-            nn.ConvTranspose2d(16,3,kernel_size=5,stride=2,output_padding=1),
+            nn.Linear(self.latent_shape[0], 2*2*128),
+            tml.View(-1, (128,2,2)),
+            nn.ConvTranspose2d(128,128,kernel_size=5,stride=1), nn.LeakyReLU(),
+            nn.ConvTranspose2d(128,128,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.ConvTranspose2d(128,64,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.ConvTranspose2d(64,32,kernel_size=6,stride=1),  nn.LeakyReLU(),
+            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.ConvTranspose2d(16,3,kernel_size=6, stride=1),
         )
     
 class AEGDN(AEBase):
     
     def _get_encoder(self):
         return nn.Sequential(
-            nn.Conv2d(3,16,kernel_size=5,stride=2), tml.GDN(16),
+            nn.Conv2d(3,16,kernel_size=6,stride=1), tml.GDN(16),
             nn.Conv2d(16,32,kernel_size=5,stride=2), tml.GDN(32),
-            nn.Conv2d(32,64,kernel_size=5,stride=2),  tml.GDN(64),
-            nn.Conv2d(64,128,kernel_size=5,stride=1), tml.GDN(128),
+            nn.Conv2d(32,64,kernel_size=6,stride=1),  tml.GDN(64),
+            nn.Conv2d(64,128,kernel_size=5,stride=2), tml.GDN(128),
+            nn.Conv2d(128,128,kernel_size=5,stride=2),tml.GDN(128),
+            nn.Conv2d(128,128,kernel_size=5,stride=1), 
         ) 
     
     def _get_decoder(self):
         return nn.Sequential(
-            nn.ConvTranspose2d(128,64,kernel_size=5,stride=1), tml.GDN(64),
-            nn.ConvTranspose2d(64,32,kernel_size=5,stride=2,output_padding=1),  tml.GDN(32),
-            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2,output_padding=1), tml.GDN(16),
-            nn.ConvTranspose2d(16,3,kernel_size=5,stride=2,output_padding=1),
+            nn.ConvTranspose2d(128,128,kernel_size=5,stride=1), tml.GDN(128),
+            nn.ConvTranspose2d(128,128,kernel_size=5,stride=2), tml.GDN(128),
+            nn.ConvTranspose2d(128,64,kernel_size=5,stride=2),  tml.GDN(64),
+            nn.ConvTranspose2d(64,32,kernel_size=6,stride=1),  tml.GDN(32),
+            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2),  tml.GDN(16),
+            nn.ConvTranspose2d(16,3,kernel_size=6, stride=1),
         )
     
-
+      
+class AEConv(AEBase):
+    
+    def _get_encoder(self):
+        return nn.Sequential(
+            nn.Conv2d(3,16,kernel_size=6,stride=1), nn.LeakyReLU(),
+            nn.Conv2d(16,32,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(32,64,kernel_size=6,stride=1),  nn.LeakyReLU(),
+            nn.Conv2d(64,128,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(128,128,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(128,128,kernel_size=5,stride=1), 
+        ) 
+    
+    def _get_decoder(self):
+        return nn.Sequential(
+            nn.ConvTranspose2d(128,128,kernel_size=5,stride=1), nn.LeakyReLU(),
+            nn.ConvTranspose2d(128,128,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.ConvTranspose2d(128,64,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.ConvTranspose2d(64,32,kernel_size=6,stride=1),  nn.LeakyReLU(),
+            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.ConvTranspose2d(16,3,kernel_size=6, stride=1),
+        )
+    
+model = AEConv()
+model = AEAlex()
+model = AEGDN()

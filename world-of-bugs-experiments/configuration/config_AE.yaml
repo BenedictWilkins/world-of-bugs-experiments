@@ -5,11 +5,12 @@ lightning:
     _target_: world-of-bugs-experiments.module.AE
     
   criterion: 
-    _target_: world-of-bugs-experiments.module.SSIM #torch.nn.MSELoss
+    _target_: world-of-bugs-experiments.module.MSESSIM #torch.nn.MSELoss
 
   score:  # anomaly score
     _target_: ${..criterion._target_}
     reduction: 'none'
+    
   metrics: 
     - _target_: world-of-bugs-experiments.module.ROC                          # ROC curve
     - _target_: world-of-bugs-experiments.module.PrecisionRecall              # PR curve

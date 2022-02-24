@@ -11,7 +11,7 @@ import hydra
 import omegaconf
 import pathlib
 from hydra.utils import instantiate
-
+from omegaconf import OmegaConf
 import wandb
 
 from pytorch_lightning import Trainer
@@ -31,11 +31,16 @@ def main(cfg) -> None:
     api = wandb.Api()
     print(list(api.runs("benedict-wilkins/WOB-Experiments")))
     run = api.run(str(pathlib.PurePath(cfg.wandb.project, cfg.wandb.run)))
-    run.config['wandb'] = {**cfg.wandb}
-    cfg = omegaconf.OmegaConf.create(run.config)
+    #run.config['wandb'] = {**cfg.wandb}
+    
+    cfg = OmegaConf.update(cfg, run.config)
+
+    #cfg = omegaconf.OmegaConf.create(run.config)
     cfg.data.train_files = "NORMAL-TRAIN/*/---.tar"
     cfg.data.validation_files = "NORMAL-TRAIN-SMALL/*/----.tar"
     cfg.data.test_files = "TEST/*/*/*.tar"
+    # add the option of changing the score when testing...
+    print(cfg)
 
     model = load_model(run, omegaconf.OmegaConf.create(run.config))
     
