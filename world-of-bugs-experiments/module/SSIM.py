@@ -3,6 +3,10 @@
 """ 
     credit: https://github.com/Po-Hsun-Su/pytorch-ssim/
 
+
+    use this instead?
+    https://github.com/VainF/pytorch-msssim
+
    Created on 21-02-2022
 """
 __author__ = "Benedict Wilkins"

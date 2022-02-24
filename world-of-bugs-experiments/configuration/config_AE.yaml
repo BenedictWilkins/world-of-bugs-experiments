@@ -4,7 +4,7 @@ lightning:
   model: 
     _target_: world-of-bugs-experiments.module.AE
     input_shape: [3,84,84]
-    latent_shape: [512]
+    latent_shape: [256]
     output_layer: 
       _target_: tml.conv.ResBlock2D
       _args_ : [3,3]
@@ -31,7 +31,7 @@ data:
   initial_buffer_size: 10000
   prefetch_factor: 16
   batch_size: 256
-  num_workers: 16
+  num_workers: 32
   train_mode: ['state']
   test_mode: ['state', 'info']
   train_files: "NORMAL-TRAIN/*/*.tar"

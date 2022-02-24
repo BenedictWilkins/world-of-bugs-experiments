@@ -136,7 +136,7 @@ class WOBDataModule(LightningDataModule):
 
     def train_dataloader(self):
         if self.in_memory:
-            return DataLoader(self.train_dataset, shuffle=True, batch_size=self.batch_size, num_workers=0, drop_last=True, pin_memory=False)
+            return DataLoader(self.train_dataset, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
         else:
             return DataLoader(self.train_dataset, shuffle=False, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, persistent_workers=True, pin_memory=True)
 
