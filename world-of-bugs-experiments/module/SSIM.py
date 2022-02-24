@@ -157,7 +157,7 @@ def ssim(
 
 
 def ms_ssim(
-    X, Y, data_range=255, size_average=True, window_size=11, window_sigma=1.5, window=None, weights=None, K=(0.01, 0.03)
+    X, Y, data_range=1.0, size_average=True, window_size=11, window_sigma=1.5, window=None, weights=None, K=(0.01, 0.03)
 ):
 
     r""" interface of ms-ssim

@@ -14,6 +14,7 @@ from typing import DefaultDict
 import torch
 import torch.nn as nn
 
+import tml
 from tml import ResBlock2D, View
 from tml.utils import as_shape
 
@@ -107,8 +108,7 @@ class Sequential(nn.Sequential):
         self.output_shape = as_shape(output_shape)
         super().__init__(*layers)       
 
-
-class AE(nn.Module):
+class AE(nn.Module): # Legacy...
     
     def __init__(self, input_shape, latent_shape=1024, channels=16, dropout=0.5, output_layer=None):
         super().__init__()
@@ -166,3 +166,90 @@ class AE(nn.Module):
             self.output_layer,
         ]
         return Sequential(self.latent_shape, self.input_shape, layers) 
+
+class AEBase(nn.Module):
+    
+    def __init__(self, input_shape=(3,84,84)):
+        super().__init__()
+        self.input_shape = input_shape
+        self.encoder = self._get_encoder()
+        self.decoder = self._get_decoder()
+        self.latent_shape = tuple(self.encoder(torch.zeros(2,*input_shape)).shape)[1:]
+        
+    def forward(self, x):
+        z = self.encoder(x)
+        y = self.decoder(z)
+        return y
+
+    def _get_encoder(self):
+        raise NotImplementedError()
+
+    def _get_decoder(self):
+        raise NotImplementedError()
+         
+class AEConv(AEBase):
+    
+    def _get_encoder(self):
+        return nn.Sequential(
+            nn.Conv2d(3,16,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(16,32,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(32,64,kernel_size=5,stride=2),  nn.LeakyReLU(),
+            nn.Conv2d(64,128,kernel_size=5,stride=1),
+        ) 
+    
+    def _get_decoder(self):
+        return nn.Sequential(
+            nn.ConvTranspose2d(128,64,kernel_size=5,stride=1), nn.LeakyReLU(),
+            nn.ConvTranspose2d(64,32,kernel_size=5,stride=2,output_padding=1),  nn.LeakyReLU(),
+            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2,output_padding=1), nn.LeakyReLU(),
+            nn.ConvTranspose2d(16,3,kernel_size=5,stride=2,output_padding=1),
+        )
+    
+class AEAlex(AEBase):
+    
+    def __init__(self, input_shape=(3,84,84), latent_shape=(3*3*128,), dropout=0.5):
+        self.dropout = dropout
+        self.latent_shape = latent_shape
+        super().__init__(input_shape=input_shape)
+       
+        
+    def _get_encoder(self):
+        return nn.Sequential(
+            nn.Conv2d(3,16,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(16,32,kernel_size=5,stride=2), nn.LeakyReLU(),
+            nn.Conv2d(32,64,kernel_size=5,stride=2),  nn.LeakyReLU(),
+            nn.Conv2d(64,128,kernel_size=5,stride=1), nn.LeakyReLU(),
+            tml.View(3*3*128, -1),
+            nn.Linear(3*3*128, self.latent_shape[0]), 
+            nn.Dropout(self.dropout) if self.dropout > 0 else nn.Identity(),
+        )
+    
+    def _get_decoder(self):
+        return nn.Sequential(
+            nn.Linear(self.latent_shape[0], 3*3*128),
+            tml.View(-1, (128,3,3)),
+            nn.ConvTranspose2d(128,64,kernel_size=5,stride=1), nn.LeakyReLU(),
+            nn.ConvTranspose2d(64,32,kernel_size=5,stride=2,output_padding=1),  nn.LeakyReLU(),
+            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2,output_padding=1), nn.LeakyReLU(),
+            nn.ConvTranspose2d(16,3,kernel_size=5,stride=2,output_padding=1),
+        )
+    
+class AEGDN(AEBase):
+    
+    def _get_encoder(self):
+        return nn.Sequential(
+            nn.Conv2d(3,16,kernel_size=5,stride=2), tml.GDN(16),
+            nn.Conv2d(16,32,kernel_size=5,stride=2), tml.GDN(32),
+            nn.Conv2d(32,64,kernel_size=5,stride=2),  tml.GDN(64),
+            nn.Conv2d(64,128,kernel_size=5,stride=1), tml.GDN(128),
+        ) 
+    
+    def _get_decoder(self):
+        return nn.Sequential(
+            nn.ConvTranspose2d(128,64,kernel_size=5,stride=1), tml.GDN(64),
+            nn.ConvTranspose2d(64,32,kernel_size=5,stride=2,output_padding=1),  tml.GDN(32),
+            nn.ConvTranspose2d(32,16,kernel_size=5,stride=2,output_padding=1), tml.GDN(16),
+            nn.ConvTranspose2d(16,3,kernel_size=5,stride=2,output_padding=1),
+        )
+    
+
