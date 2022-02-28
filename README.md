@@ -6,7 +6,7 @@ For more details see the [World of Bugs](https://github.com/BenedictWilkins/worl
 
 ## Experiments
 
-We [Weights and Biases](https://wandb.ai/) to to manage our experiments, see [here](https://wandb.ai/benedict-wilkins/WOB-Experiments) for model and training details (note the only one run is currently available).
+We used [Weights and Biases](https://wandb.ai/) to to manage our experiments, see [here](https://wandb.ai/benedict-wilkins/WOB-Experiments) for model and training details (note the only one run is currently available).
 
 ## Documentation
 
