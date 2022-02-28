@@ -1,4 +1,3 @@
 wandb:
-  run: "2eosezzw"
-  project: "benedict-wilkins/WOB-Experiments"
-  model_alias: "best"
+  run: benedict-wilkins/WOB-Experiments/1g5i18bq
+  model_alias: best

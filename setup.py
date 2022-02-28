@@ -9,7 +9,7 @@ __status__ = "Development"
 
 from setuptools import setup, find_packages
 
-setup(name='wob-experiments',
+setup(name='world-of-bugs-experiments',
       version='0.0.1',
       description='',
       url='',
@@ -17,8 +17,8 @@ setup(name='wob-experiments',
       author_email='benrjw@gmail.com',
       packages=find_packages(),
       install_requires=[
-                        'tml @ git+https://git@github.com/BenedictWilkins/pytorch-module-lib.git',
-                        'gymu @ git+https://git@github.com/BenedictWilkins/gymu.git',
+                        #'tml @ git+https://git@github.com/BenedictWilkins/pytorch-module-lib.git',
+                        #'gymu @ git+https://git@github.com/BenedictWilkins/gymu.git',
                         'numpy', 
                         'torch', 
                         'wandb',

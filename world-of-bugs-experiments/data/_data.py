@@ -36,11 +36,11 @@ TEST_SET = "TEST/**/*.tar"
 class WOBDataModule(LightningDataModule):
 
     def __init__(self, 
-                    path,
+                    path=".",
                     force=False, 
                     batch_size=256, 
                     in_memory = False,
-                    train_mode=['state', 'action', 'next_state'],
+                    train_mode=['state', 'action'],
                     validation_mode=None,
                     test_mode=None,
                     shuffle_buffer_size = 10000,
@@ -54,6 +54,7 @@ class WOBDataModule(LightningDataModule):
                     ):
         super().__init__()
         self.path = pathlib.Path(pathlib.Path(path).resolve(), WORLD_OF_BUGS_DATASET_PATH)
+        print(self.path)
         self.force = force
         self.batch_size = batch_size
         self.in_memory = in_memory

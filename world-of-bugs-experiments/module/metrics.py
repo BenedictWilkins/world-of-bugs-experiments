@@ -30,7 +30,7 @@ class LabelThresholdMetric:
         assert len(label_thresholds) > 0
         self.label_thresholds = label_thresholds
         
-    def __call__(self, logger, score, label, **kwargs):
+    def __call__(self, logger, score, label, ax=None, **kwargs):
         score = score.cpu().numpy() if torch.is_tensor(score) else score
         label = label.cpu().numpy() if torch.is_tensor(label) else label
         assert score.shape == label.shape
@@ -43,25 +43,27 @@ class LabelThresholdMetric:
         # plot results
         kwargs['title'] = kwargs.get('title', self.name)
         xs, ys = [r['x'] for r in results], [r['y'] for r in results]
-        fig = self.plot(xs, ys, self.label_thresholds, **kwargs)
-        fig = self.plot_random_performance(fig, labels)
-        fig.canvas.draw() # ensure drawn...
-        logger.log({f"{self.name}/{kwargs['title']}" : wandb.Image(fig)})
+        if ax is None:
+            _, ax = plt.subplots(1,1, figsize=(3,3))
 
-    def plot(self, xs, ys, label_thresholds, alpha=0.8, title="", figsize=(3,3), x_lim=[0,1], y_lim=[0,1], x_label="",  y_label="",font={'fontsize':10}, cmap="viridis", legend=False):
+        ax = self.plot(ax, xs, ys, self.label_thresholds, **kwargs)
+        ax = self.plot_random_performance(ax, labels)
+        #fig.canvas.draw() # ensure drawn...
+        logger.log({f"{self.name}/{kwargs['title']}" : wandb.Image(ax)})
+        return dict(zip(self.label_thresholds, results))
+
+    def plot(self, ax, xs, ys, label_thresholds, alpha=0.8, title="",  x_lim=[0,1], y_lim=[0,1], x_label="",  y_label="",font={'fontsize':8}, cmap="viridis", legend=False):
         cmap = mpl.colormaps[cmap]
-        fig, ax = plt.subplots(1,1, figsize=figsize)
         ax.set_aspect('equal')
         ax.set_prop_cycle('color', cmap(1 - np.linspace(0,1,len(label_thresholds))))
         ax.set_title(title, fontdict=font)
         ax.set_xlabel(x_label), ax.set_ylabel(y_label)
         ax.set_xlim(x_lim), ax.set_ylim(y_lim)
-
         for x,y,lt in zip(xs, ys, label_thresholds):
             ax.plot(x, y, alpha=alpha, label=f"τ={lt}")
         if legend:
             ax.legend()
-        return fig
+        return ax
 
     def plot_random_performance(self, fig, labels):
         raise NotImplementedError()
@@ -75,9 +77,9 @@ class ROC(LabelThresholdMetric):
     def random_performance(self, label):
         return [[0,1],[0,1]]
 
-    def plot_random_performance(self, fig, _):
-        fig.axes[0].plot(*self.random_performance(None), linestyle="--", color='black')
-        return fig
+    def plot_random_performance(self, ax, _):
+        ax.plot(*self.random_performance(None), linestyle="--", color='black')
+        return ax
 
     @property
     def name(self):
@@ -98,11 +100,11 @@ class PrecisionRecall(LabelThresholdMetric):
         label_ratio =  label.sum() / len(label)
         return [[0, 1],[label_ratio, label_ratio]]
 
-    def plot_random_performance(self, fig, labels):
+    def plot_random_performance(self, ax, labels):
         random_performance = list(sorted([self.random_performance(label) for label in labels], key=lambda x: x[1][0]))
-        fig.axes[0].plot(*random_performance[0], linestyle="--", color='black')
-        fig.axes[0].plot(*random_performance[-1], linestyle="--", color='black')
-        return fig
+        ax.plot(*random_performance[0], linestyle="--", color='black')
+        ax.plot(*random_performance[-1], linestyle="--", color='black')
+        return ax
 
     @property
     def name(self):
@@ -125,7 +127,7 @@ class AccuracyPrecisionRecallF1(LabelThresholdMetric):
         f1 = (2 * precision * recall) / (precision + recall)
         accuracy = (tps + (fps[-1] - fps)) / (tps[-1] + fps[-1])
 
-    def plot(self, x, y):
+    def plot(self, ax, x, y):
         pass 
 
 

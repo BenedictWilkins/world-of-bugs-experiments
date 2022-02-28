@@ -7,9 +7,10 @@ __author__ = "Benedict Wilkins"
 __email__ = "benrjw@gmail.com"
 __status__ = "Development"
 
-from re import L
 from types import SimpleNamespace
 from typing import DefaultDict
+import matplotlib.pyplot as plt
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -80,14 +81,20 @@ class AELightningModule(pl.LightningModule):
         labels = {k:torch.cat(v) for k,v in labels.items()}
 
         assert set(scores.keys()) == set(labels.keys())
+        plt.ioff()
         for metric in self.metrics:# for each score compute the metric
-            for k in scores.keys(): 
+            fig, axes = plt.subplots(2, int(np.ceil(len(scores) / 2)), figsize=(14,4), squeeze=True, sharex=True, sharey=True)
+            axes = axes.ravel()
+            fig.tight_layout()
+            print(f"{type(metric).__name__} | {metric.label_thresholds}")
+            for k, ax in zip(scores.keys(), axes): 
                 x, y = scores[k], labels[k]
                 assert x.shape == y.shape
-                metric(self.logger.experiment, x, y, title = f"{k} {metric.abreviation}")
-                
+                result = metric(self.logger.experiment, x, y, ax=ax, title = f"{k} {metric.abreviation}")
+                print(f"{k} {[round(v['auc'], 3) for v in result.values()]}")
 
-            
+            axes[-1].legend()
+            plt.show()
 
 def reconstruction_as_image(model): # ensures that a reconstruction is done properly when testing purposes
     if "logit" in str(model.criterion).lower():
